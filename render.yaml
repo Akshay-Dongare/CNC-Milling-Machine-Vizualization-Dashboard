@@ -14,4 +14,8 @@ services:
       - key: MQTT_USERNAME
         sync: false
       - key: MQTT_PASSWORD
-        sync: false 
+        sync: false
+    plan: free  # Use free tier
+    region: oregon  # Choose your preferred region
+    healthCheckPath: /  # Basic health check
+    autoDeploy: true  # Automatically deploy on changes 
