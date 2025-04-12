@@ -1,0 +1,5 @@
+# SweetViz Dependencies (Python 3.9)
+pandas==1.4.0
+numpy==1.23.1 # Will need to uninstall current version of numpy first
+sweetviz==2.1.4
+jupyter
