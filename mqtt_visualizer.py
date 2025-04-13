@@ -9,6 +9,7 @@ from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
 import joblib
 import os
+import ssl
 
 # Config - Using environment variables for deployment
 MQTT_BROKER = os.getenv('MQTT_BROKER', 'localhost')
@@ -100,6 +101,8 @@ def on_message(client, userdata, msg):
         print(f"Error processing message: {e}")
 
 client = mqtt.Client(protocol=mqtt.MQTTv5)
+# Enable TLS/SSL
+client.tls_set(cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS)
 client.on_connect = on_connect
 client.on_message = on_message
 
