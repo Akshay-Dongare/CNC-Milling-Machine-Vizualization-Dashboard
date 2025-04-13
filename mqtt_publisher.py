@@ -5,6 +5,7 @@ import pandas as pd
 from flask import Flask
 import threading
 import os
+import ssl
 
 VOLTAGE = 220
 
@@ -24,6 +25,10 @@ def publisher():
     """Background task that reads the dataset and publishes each row via MQTT."""
     df = load_dataset()
     client = mqtt.Client(protocol=mqtt.MQTTv5)
+
+    # Enable TLS/SSL
+    client.tls_set(cert_reqs=ssl.CERT_REQUIRED, tls_version=ssl.PROTOCOL_TLS)
+
     
     MQTT_USERNAME = os.getenv('MQTT_USERNAME', '')
     MQTT_PASSWORD = os.getenv('MQTT_PASSWORD', '')
