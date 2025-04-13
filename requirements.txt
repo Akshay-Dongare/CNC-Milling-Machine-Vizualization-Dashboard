@@ -10,3 +10,4 @@ six==1.17.0
 tzdata==2025.2
 flask
 scikit-learn==1.5.2
+streamlit-autorefresh
