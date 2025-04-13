@@ -333,7 +333,7 @@ def predict_failure(data):
         return None, None
     
     # Prepare data for prediction
-    features = ['temperature', 'vibration', 'pressure', 'power']
+    features = ['temperature', 'vibration', 'pressure', 'motor_current']
     X = data[features].iloc[-1:].copy()  # Get latest readings
     
     try:
