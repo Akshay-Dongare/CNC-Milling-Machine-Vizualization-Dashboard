@@ -7,6 +7,7 @@ import queue
 import threading
 from datetime import datetime
 from streamlit_autorefresh import st_autorefresh
+import time
 import joblib
 import os
 import ssl
@@ -453,5 +454,6 @@ def update_dashboard():
 
 # Main loop
 if __name__ == "__main__":
-    st_autorefresh(interval=1000, limit=1000, key="dashboard_refresh")
-    update_dashboard()
+    while True:
+            update_dashboard()
+            time.sleep(0.1)  # Update 10 times per second for smoother animation 
