@@ -1,57 +1,74 @@
 import paho.mqtt.client as mqtt
 import json
 import time
-import random
+import pandas as pd
+from flask import Flask
+import threading
 import os
-from datetime import datetime
+
+VOLTAGE = 220
 
 # MQTT Configuration
 MQTT_BROKER = os.getenv('MQTT_BROKER', 'localhost')
-MQTT_PORT = int(os.getenv('MQTT_PORT', '1883'))
+MQTT_PORT = int(os.getenv('MQTT_PORT', '8883'))
 MQTT_TOPIC = os.getenv('MQTT_TOPIC', 'machine/data')
 MQTT_USERNAME = os.getenv('MQTT_USERNAME', '')
 MQTT_PASSWORD = os.getenv('MQTT_PASSWORD', '')
+def load_dataset():
+    """Load and prepare the dataset from CSV."""
+    df = pd.read_csv('Predictive_Maintenance_v2.csv')
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    return df
 
-def on_connect(client, userdata, flags, rc):
-    print(f"Connected with result code {rc}")
-
-def generate_machine_data():
-    """Generate simulated machine data"""
-    return {
-        'timestamp': datetime.now().isoformat(),
-        'temperature': round(random.uniform(50, 90), 2),
-        'vibration': round(random.uniform(0.1, 1.0), 2),
-        'pressure': round(random.uniform(1.0, 5.0), 2),
-        'motor_current': round(random.uniform(2.0, 10.0), 2),
-        'power': round(random.uniform(100, 500), 2),
-        'failure': random.choice([0, 1])
-    }
-
-def main():
-    client = mqtt.Client()
+def publisher():
+    """Background task that reads the dataset and publishes each row via MQTT."""
+    df = load_dataset()
+    client = mqtt.Client(protocol=mqtt.MQTTv5)
     
+    MQTT_USERNAME = os.getenv('MQTT_USERNAME', '')
+    MQTT_PASSWORD = os.getenv('MQTT_PASSWORD', '')
     if MQTT_USERNAME and MQTT_PASSWORD:
         client.username_pw_set(MQTT_USERNAME, MQTT_PASSWORD)
     
-    client.on_connect = on_connect
-    
     try:
+        print("Connecting to MQTT broker...")
         client.connect(MQTT_BROKER, MQTT_PORT, 60)
         client.loop_start()
+        print("Connected successfully to HiveMQ Cloud!")
         
-        print(f"Publisher connected to {MQTT_BROKER}:{MQTT_PORT}")
+        total_rows = len(df)
+        current_row = 0
+        print("Starting to publish data from dataset...")
         
         while True:
-            data = generate_machine_data()
-            client.publish(MQTT_TOPIC, json.dumps(data))
-            print(f"Published: {data}")
-            time.sleep(5)  # Publish every 5 seconds
-            
+            row = df.iloc[current_row]
+            message = {
+                'timestamp': row['timestamp'].isoformat(),
+                'temperature': row['temperature'],
+                'vibration': row['vibration'],
+                'pressure': row['pressure'],
+                'motor_current': row['motor_current'],
+                'power': row['motor_current'] * VOLTAGE,
+                'failure': row['failure']
+            }
+            print(f"Publishing: {message}")
+            client.publish(MQTT_TOPIC, json.dumps(message))
+            current_row = (current_row + 1) % total_rows
+            time.sleep(1)
+    
     except Exception as e:
         print(f"Error: {e}")
     finally:
         client.loop_stop()
         client.disconnect()
 
+app = Flask(__name__)
+
+@app.route('/')
+def index():
+    return "MQTT Publisher is running!"
+
 if __name__ == "__main__":
-    main()
+    publisher_thread = threading.Thread(target=publisher, daemon=True)
+    publisher_thread.start()
+    app.run(host='0.0.0.0', port=8080)
